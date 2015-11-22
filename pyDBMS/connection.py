@@ -33,19 +33,16 @@ class Connection:
         self._writer.write(message.encode())
 
     async def get_response(self):
-        lines = []
-        while not self._reader.at_eof():
-            lines.append((await self._reader.readline()).decode())
-        return '\n'.join(lines)
+        return (await self._reader.readline()).decode()
 
     async def _send_cursor_request(self):
         self.send_message(json.dumps({'qtype': TYPE_CREATE_CURSOR}))
         response = await self.get_response()
         parsed_response = json.loads(response)
-        if response['status'] == STATUS_SUCCESS:
-            return response['cur_id']
+        if parsed_response['status'] == STATUS_SUCCESS:
+            return parsed_response['cur_id']
         else:
-            raise DBMSError(response['error'])
+            raise DBMSError(parsed_response['error'])
 
     async def cursor(self):
         _id = await self._send_cursor_request()
